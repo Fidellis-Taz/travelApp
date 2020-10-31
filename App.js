@@ -1,78 +1,95 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   StyleSheet,
   Text,
   View,
   FlatList,
-  Alert,
-  TouchableWithoutFeedback,
-  Keyboard,
+  ActivityIndicator,
+  Dimensions,
 } from "react-native";
-import Header from "./components/Header";
-import TodoItem from "./components/TodoItem";
-import AddTodo from "./components/AddTodo";
-export default function App() {
-  const [todos, setTodos] = useState([
-    { text: "read a book", key: "1" },
-    { text: "code for an hour", key: "2" },
-    { text: "go hard or go hoeme", key: "3" },
-  ]);
 
-  const pressHandle = (key) => {
-    setTodos((prevTodos) => {
-      return prevTodos.filter((todo) => todo.key != key);
-    });
+console.disableYellowBox = true;
+
+export default class App extends React.Component {
+  state = {
+    news: [],
+    loading: true,
   };
 
-  const submitHandle = (text) => {
-    if (text.length > 3) {
-      setTodos((prevTodos) => {
-        return [{ text: text, key: Math.random().toString() }, ...prevTodos];
+  fetchNews = () => {
+    fetch(`
+http://newsapi.org/v2/top-headlines?country=lt&apiKey=bb11c9c17d134253800cf41eb24c8618`)
+      .then((res) => res.json())
+      .then((response) => {
+        this.setState({
+          news: response.articles,
+          loading: false,
+        });
       });
-    } else {
-      Alert.alert("OOPS", "Todos must be over 3 letters long", [
-        { text: "Understood", onPress: () => console.log("alert closed") },
-      ]);
-    }
   };
 
-  return (
-    <TouchableWithoutFeedback
-      onPress={() => {
-        Keyboard.dismiss();
-      }}
-    >
-      <View style={styles.container}>
-        <Header />
-        <View style={styles.content}>
-          <AddTodo submitHandle={submitHandle} />
-          <View style={styles.list}>
+  componentDidMount() {
+    this.fetchNews();
+  }
+  render() {
+    if (this.state.loading) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#333",
+          }}
+        >
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>Top News</Text>
+          </View>
+          <View style={styles.news}>
             <FlatList
-              data={todos}
-              renderItem={({ item }) => (
-                <TodoItem item={item} pressHandle={pressHandle} />
-              )}
+              data={this.state.news}
+              renderItem={({ item }) => {
+                return (
+                  <View
+                    style={{
+                      width: 50,
+                      height: 180,
+                      backgroundColor: "#fff",
+                      marginBottom: 15,
+                    }}
+                  >
+                    <Image
+                      source={{ url: item.urlToImage }}
+                      style={styles.absoluteFill}
+                    />
+                  </View>
+                );
+              }}
             />
           </View>
         </View>
-      </View>
-    </TouchableWithoutFeedback>
-  );
+      );
+    }
+  }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#333",
   },
-  content: {
-    padding: 40,
-
-    flex: 1,
+  headerText: {
+    fontSize: 30,
+    color: "#fff",
   },
-  list: {
-    marginTop: 20,
-
-    flex: 1,
+  news: {
+    alignSelf: "center",
+    backgroundColor: "white",
   },
 });
